@@ -367,47 +367,33 @@ begin
   new_user_id := gen_random_uuid();
 
   insert into auth.users (
-    id,
-    email,
-    encrypted_password,
-    email_confirmed_at,
-    raw_app_meta_data,
-    raw_user_meta_data,
-    created_at,
-    updated_at,
-    confirmation_token,
-    email_change_token_current,
-    email_change_token_new,
-    recovery_token
+    instance_id, id, aud, role, email,
+    encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data,
+    created_at, updated_at
   ) values (
+    '00000000-0000-0000-0000-000000000000',
     new_user_id,
+    'authenticated',
+    'authenticated',
     p_email,
     extensions.crypt(p_password, extensions.gen_salt('bf')),
     now(),
     '{"provider": "email", "providers": ["email"]}',
     jsonb_build_object('name', p_name, 'role', p_role),
     now(),
-    now(),
-    '',
-    '',
-    '',
-    ''
+    now()
   );
 
   insert into auth.identities (
-    id,
-    user_id,
-    identity_data,
-    provider,
-    provider_id,
-    last_sign_in_at,
-    created_at,
-    updated_at
+    id, user_id, identity_data, provider, provider_id,
+    email, last_sign_in_at, created_at, updated_at
   ) values (
-    p_email,
+    gen_random_uuid(),
     new_user_id,
     jsonb_build_object('sub', new_user_id::text, 'email', p_email),
     'email',
+    p_email,
     p_email,
     now(),
     now(),
