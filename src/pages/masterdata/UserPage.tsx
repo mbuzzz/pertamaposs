@@ -87,18 +87,17 @@ export const UserPage: React.FC = () => {
       showToast('User berhasil diperbarui!', 'success');
       fetchUsers();
     } else {
-      // Note: This creates a profile but not an auth user.
-      // Actual user creation should be done via Supabase Admin API.
-      const { error } = await supabase.from('profiles').insert({
-        id: crypto.randomUUID(),
-        username,
-        name,
-        role,
-        outlet_id: role === 'kasir' || role === 'supervisor' ? outletId : null,
-        division: role === 'kasir' || role === 'supervisor' ? division : null,
-        is_active: isActive,
+      const email = username.includes('@') ? username : `${username}@pertamapos.local`;
+      const { error } = await supabase.rpc('create_user_admin', {
+        p_username: username,
+        p_email: email,
+        p_password: password,
+        p_name: name,
+        p_role: role,
+        p_outlet_id: role === 'kasir' || role === 'supervisor' ? outletId : null,
+        p_division: role === 'kasir' || role === 'supervisor' ? division : null,
       });
-      if (error) { showToast('Gagal menambahkan user!', 'error'); return; }
+      if (error) { showToast(error.message || 'Gagal menambahkan user!', 'error'); return; }
       showToast('User baru berhasil ditambahkan!', 'success');
       fetchUsers();
     }
@@ -108,7 +107,8 @@ export const UserPage: React.FC = () => {
 
   const handleDelete = async (id: string, name: string) => {
     if (window.confirm(`Hapus pengguna "${name}"?`)) {
-      await supabase.from('profiles').delete().eq('id', id);
+      const { error } = await supabase.rpc('delete_user_admin', { p_user_id: id });
+      if (error) { showToast(error.message || 'Gagal menghapus user!', 'error'); return; }
       showToast('User berhasil dihapus!', 'success');
       fetchUsers();
     }

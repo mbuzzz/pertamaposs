@@ -340,6 +340,81 @@ create trigger on_auth_user_created
 -- 5. RPC FUNCTIONS
 -- =====================================================
 
+create or replace function public.create_user_admin(
+  p_username text,
+  p_email text,
+  p_password text,
+  p_name text,
+  p_role text,
+  p_outlet_id text,
+  p_division text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  new_user_id uuid;
+begin
+  if (select role from public.profiles where id = auth.uid()) != 'admin' then
+    raise exception 'Hanya administrator yang dapat membuat pengguna baru.';
+  end if;
+
+  insert into auth.users (
+    id,
+    instance_id,
+    aud,
+    role,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    created_at,
+    updated_at
+  ) values (
+    gen_random_uuid(),
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    p_email,
+    extensions.crypt(p_password, extensions.gen_salt('bf')),
+    now(),
+    '{"provider": "email", "providers": ["email"]}',
+    jsonb_build_object('name', p_name, 'role', p_role),
+    now(),
+    now()
+  )
+  returning id into new_user_id;
+
+  update public.profiles
+  set username = p_username,
+      name = p_name,
+      role = p_role,
+      outlet_id = p_outlet_id,
+      division = p_division
+  where id = new_user_id;
+
+  return new_user_id;
+end;
+$$;
+
+create or replace function public.delete_user_admin(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if (select role from public.profiles where id = auth.uid()) != 'admin' then
+    raise exception 'Hanya administrator yang dapat menghapus pengguna.';
+  end if;
+
+  delete from auth.users where id = p_user_id;
+end;
+$$;
+
 create or replace function public.adjust_product_stock(product_id text, amount integer)
 returns void
 language plpgsql
