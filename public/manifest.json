@@ -1,0 +1,28 @@
+{
+  "short_name": "PertamaPOS",
+  "name": "POS PertamaGroup Mobile-First",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logoicon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#10B981",
+  "background_color": "#ffffff",
+  "orientation": "portrait"
+}
