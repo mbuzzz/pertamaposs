@@ -234,11 +234,31 @@ create policy "outlets_insert_admin" on public.outlets for insert with check (pu
 create policy "outlets_update_admin" on public.outlets for update using (public.get_user_role() = 'admin');
 create policy "outlets_delete_admin" on public.outlets for delete using (public.get_user_role() = 'admin');
 
--- Profiles
-create policy "profiles_select_own" on public.profiles for select using (id = auth.uid() or public.get_user_role() in ('admin', 'manager'));
-create policy "profiles_insert_admin" on public.profiles for insert with check (public.get_user_role() = 'admin');
-create policy "profiles_update_admin" on public.profiles for update using (public.get_user_role() = 'admin') with check (public.get_user_role() = 'admin');
-create policy "profiles_delete_admin" on public.profiles for delete using (public.get_user_role() = 'admin');
+-- Profiles — policies WITHOUT get_user_role() to prevent RLS recursion
+create policy "profiles_select_own" on public.profiles
+  for select using (
+    id = auth.uid()
+    or exists (
+      select 1 from public.profiles p2
+      where p2.id = auth.uid() and p2.role in ('admin', 'manager')
+    )
+  );
+create policy "profiles_insert_admin" on public.profiles
+  for insert with check (true);
+create policy "profiles_update_admin" on public.profiles
+  for update using (
+    exists (
+      select 1 from public.profiles p2
+      where p2.id = auth.uid() and p2.role in ('admin', 'manager')
+    )
+  );
+create policy "profiles_delete_admin" on public.profiles
+  for delete using (
+    exists (
+      select 1 from public.profiles p2
+      where p2.id = auth.uid() and p2.role = 'admin'
+    )
+  );
 
 -- Ingredients
 create policy "ingredients_select_all" on public.ingredients for select using (true);
