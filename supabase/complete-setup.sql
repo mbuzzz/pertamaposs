@@ -313,12 +313,15 @@ declare
   _role     text;
 begin
   _username := split_part(new.email, '@', 1);
-  _role := case
-    when _username like 'admin%'      then 'admin'
-    when _username like 'manager%'    then 'manager'
-    when _username like 'supervisor%' then 'supervisor'
-    else 'kasir'
-  end;
+  _role := coalesce(
+    new.raw_user_meta_data ->> 'role',
+    case
+      when _username like 'admin%'      then 'admin'
+      when _username like 'manager%'    then 'manager'
+      when _username like 'supervisor%' then 'supervisor'
+      else 'kasir'
+    end
+  );
 
   insert into public.profiles (id, username, name, role)
   values (

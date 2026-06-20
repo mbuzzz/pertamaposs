@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { useOutlets } from '../../hooks/useOutlets';
 import { User, UserRole } from '../../types';
 import { Button, Card, Input, Select, Badge } from '../../components/common';
@@ -88,16 +89,45 @@ export const UserPage: React.FC = () => {
       fetchUsers();
     } else {
       const email = username.includes('@') ? username : `${username}@pertamapos.local`;
-      const { error } = await supabase.rpc('create_user_admin', {
-        p_username: username,
-        p_email: email,
-        p_password: password,
-        p_name: name,
-        p_role: role,
-        p_outlet_id: role === 'kasir' || role === 'supervisor' ? outletId : null,
-        p_division: role === 'kasir' || role === 'supervisor' ? division : null,
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const tempClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
       });
-      if (error) { showToast(error.message || 'Gagal menambahkan user!', 'error'); return; }
+
+      const { data, error: signUpError } = await tempClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role,
+          },
+        },
+      });
+
+      if (signUpError) {
+        showToast(signUpError.message || 'Gagal mendaftarkan user di sistem auth!', 'error');
+        return;
+      }
+
+      if (data.user) {
+        const { error: profileError } = await supabase.from('profiles').update({
+          outlet_id: role === 'kasir' || role === 'supervisor' ? outletId : null,
+          division: role === 'kasir' || role === 'supervisor' ? division : null,
+        }).eq('id', data.user.id);
+
+        if (profileError) {
+          showToast('User terdaftar tapi gagal memperbarui data profil!', 'error');
+          return;
+        }
+      }
+
       showToast('User baru berhasil ditambahkan!', 'success');
       fetchUsers();
     }
