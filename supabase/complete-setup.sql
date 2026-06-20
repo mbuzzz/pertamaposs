@@ -398,7 +398,7 @@ begin
     'authenticated',
     'authenticated',
     p_email,
-    extensions.crypt(p_password, extensions.gen_salt('bf')),
+    extensions.crypt(p_password, extensions.gen_salt('bf', 10)),
     now(),
     '{"provider": "email", "providers": ["email"]}',
     jsonb_build_object('name', p_name, 'role', p_role),
