@@ -387,13 +387,12 @@ begin
 
   insert into auth.identities (
     id, user_id, identity_data, provider, provider_id,
-    email, last_sign_in_at, created_at, updated_at
+    last_sign_in_at, created_at, updated_at
   ) values (
     gen_random_uuid(),
     new_user_id,
     jsonb_build_object('sub', new_user_id::text, 'email', p_email),
     'email',
-    p_email,
     p_email,
     now(),
     now(),
